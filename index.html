@@ -67,7 +67,7 @@
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             display: none;
-            position: relative; /* For positioning difficulty */
+            position: relative;
         }
         #difficulty {
             position: absolute;
@@ -79,16 +79,17 @@
             font-size: 16px;
             font-weight: bold;
         }
+        #lives {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 20px;
+            color: red;
+        }
         #question {
             font-size: 24px;
-            margin: 30px 0 20px; /* Add top margin for difficulty */
+            margin: 30px 0 20px;
             text-align: center;
-        }
-        #image {
-            max-width: 200px;
-            height: auto;
-            margin: 10px auto;
-            display: block;
         }
         #options {
             display: grid;
@@ -124,9 +125,16 @@
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            font-size: 24px;
+            font-size: 20px;
             color: #333;
             display: none;
+            text-align: left;
+        }
+        #wrong-questions {
+            margin-top: 20px;
+        }
+        #wrong-questions p {
+            margin: 10px 0;
         }
         #restart, .language-btn {
             padding: 15px;
@@ -153,12 +161,13 @@
         <div id="score">Correct Answers: 0</div>
         <div id="timer">Time: 20s</div>
         <div id="difficulty"></div>
+        <div id="lives"></div>
         <div id="question"></div>
-        <img id="image" src="" alt="Shape Image">
         <div id="options"></div>
     </div>
     <div id="game-over">
-        Game Over! You answered <span id="final-score">0</span> questions correctly.<br>
+        <p>Game Over! You answered <span id="final-score">0</span> questions correctly.</p>
+        <div id="wrong-questions"></div>
         <button id="restart">Restart</button>
     </div>
 
@@ -167,8 +176,10 @@
         let currentQuestion = null;
         let score = 0;
         let timeLeft = 20;
+        let lives = 3;
         let timer = null;
         let questions = [];
+        let wrongQuestions = [];
 
         function getRandomInt(min, max) {
             return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -198,152 +209,133 @@
                     zh: `一個邊長為${side}的正方體，它的表面積=`,
                     en: `A cube with side length ${side}, its surface area =`,
                     answer: `${6 * side * side}`,
-                    options: [`${6 * side * side}`, `${3 * side * side}`, `${4 * side * side}`, `${8 * side * side}`],
-                    image: "cube.png"
+                    options: [`${6 * side * side}`, `${3 * side * side}`, `${4 * side * side}`, `${8 * side * side}`]
                 },
                 {
                     level: 1, timeBonus: 10,
                     zh: `一個邊長為${side}的正方體，它的容量=`,
                     en: `A cube with side length ${side}, its volume =`,
                     answer: `${side * side * side}`,
-                    options: [`${side * side * side}`, `${side * side}`, `${2 * side * side * side}`, `${side * side * side / 2}`],
-                    image: "cube.png"
+                    options: [`${side * side * side}`, `${side * side}`, `${2 * side * side * side}`, `${side * side * side / 2}`]
                 },
                 {
                     level: 1, timeBonus: 10,
-                    zh: `有一個錐體，底部為${base1}x${base2}的長方形，高度為${height}，它的容量=`,
+                    zh: `有一個稜柱，底部為${base1}x${base2}的長方形，高度為${height}，它的容量=`,
                     en: `A prism with a ${base1}x${base2} rectangular base and height ${height}, its volume =`,
                     answer: `${base1 * base2 * height}`,
-                    options: [`${base1 * base2 * height}`, `${base1 * base2}`, `${base1 * base2 * height / 2}`, `${2 * base1 * base2 * height}`],
-                    image: "prism.png"
+                    options: [`${base1 * base2 * height}`, `${base1 * base2}`, `${base1 * base2 * height / 2}`, `${2 * base1 * base2 * height}`]
                 },
                 {
                     level: 1, timeBonus: 10,
                     zh: `有一個圓柱體，底部半徑為${radius}，高度為${height}，它的容量=`,
                     en: `A cylinder with base radius ${radius} and height ${height}, its volume =`,
                     answer: `${radius * radius * height}π`,
-                    options: [`${radius * radius * height}π`, `${radius * radius}π`, `${radius * height}π`, `${2 * radius * radius * height}π`],
-                    image: "cylinder.png"
+                    options: [`${radius * radius * height}π`, `${radius * radius}π`, `${radius * height}π`, `${2 * radius * radius * height}π`]
                 },
                 {
                     level: 1, timeBonus: 10,
                     zh: `有一個圓錐體，底部半徑為${radius}，高度為${height}，它的容量=`,
                     en: `A cone with base radius ${radius} and height ${height}, its volume =`,
                     answer: `(${radius * radius * height}/3)π`,
-                    options: [`(${radius * radius * height}/3)π`, `${radius * radius * height}π`, `(${radius * radius}/3)π`, `(${radius * height}/3)π`],
-                    image: "cone.png"
+                    options: [`(${radius * radius * height}/3)π`, `${radius * radius * height}π`, `(${radius * radius}/3)π`, `(${radius * height}/3)π`]
                 },
                 {
                     level: 1, timeBonus: 10,
                     zh: `有一個球體，半徑為${radius}，它的容量=`,
                     en: `A sphere with radius ${radius}, its volume =`,
                     answer: `(${4 * radius * radius * radius}/3)π`,
-                    options: [`(${4 * radius * radius * radius}/3)π`, `(${2 * radius * radius * radius}/3)π`, `${radius * radius * radius}π`, `(${4 * radius * radius * radius})π`],
-                    image: "sphere.png"
+                    options: [`(${4 * radius * radius * radius}/3)π`, `(${2 * radius * radius * radius}/3)π`, `${radius * radius * radius}π`, `(${4 * radius * radius * radius})π`]
                 },
                 {
                     level: 1, timeBonus: 10,
                     zh: `有一個球體，半徑為${radius}，它的表面積=`,
                     en: `A sphere with radius ${radius}, its surface area =`,
                     answer: `${4 * radius * radius}π`,
-                    options: [`${4 * radius * radius}π`, `${2 * radius * radius}π`, `${radius * radius}π`, `${8 * radius * radius}π`],
-                    image: "sphere.png"
+                    options: [`${4 * radius * radius}π`, `${2 * radius * radius}π`, `${radius * radius}π`, `${8 * radius * radius}π`]
                 },
                 {
                     level: 1, timeBonus: 10,
                     zh: `有一個半球體，半徑為${radius}，它的容量=`,
                     en: `A hemisphere with radius ${radius}, its volume =`,
                     answer: `(${2 * radius * radius * radius}/3)π`,
-                    options: [`(${2 * radius * radius * radius}/3)π`, `(${4 * radius * radius * radius}/3)π`, `${radius * radius * radius}π`, `(${radius * radius * radius}/3)π`],
-                    image: "hemisphere.png"
+                    options: [`(${2 * radius * radius * radius}/3)π`, `(${4 * radius * radius * radius}/3)π`, `${radius * radius * radius}π`, `(${radius * radius * radius}/3)π`]
                 },
                 {
                     level: 1, timeBonus: 10,
                     zh: `有一個半球體，半徑為${radius}，它的表面積=`,
                     en: `A hemisphere with radius ${radius}, its surface area =`,
                     answer: `${3 * radius * radius}π`,
-                    options: [`${3 * radius * radius}π`, `${2 * radius * radius}π`, `${4 * radius * radius}π`, `${radius * radius}π`],
-                    image: "hemisphere.png"
+                    options: [`${3 * radius * radius}π`, `${2 * radius * radius}π`, `${4 * radius * radius}π`, `${radius * radius}π`]
                 },
                 {
                     level: 2, timeBonus: 20,
                     zh: `有一個圓錐體，半徑為${radius}，斜高為${slantHeight}，它的表面積=`,
                     en: `A cone with radius ${radius} and slant height ${slantHeight}, its surface area =`,
                     answer: `${radius * radius}π + ${radius * slantHeight}π`,
-                    options: [`${radius * radius}π + ${radius * slantHeight}π`, `${radius * radius}π`, `${radius * slantHeight}π`, `${2 * radius * radius}π`],
-                    image: "cone.png"
+                    options: [`${radius * radius}π + ${radius * slantHeight}π`, `${radius * radius}π`, `${radius * slantHeight}π`, `${2 * radius * radius}π`]
                 },
                 {
                     level: 2, timeBonus: 20,
                     zh: `有一個圓柱體，半徑為${radius}，高為${height}，它的表面積=`,
                     en: `A cylinder with radius ${radius} and height ${height}, its surface area =`,
                     answer: `${2 * radius * radius + 2 * radius * height}π`,
-                    options: [`${2 * radius * radius + 2 * radius * height}π`, `${radius * radius + radius * height}π`, `${2 * radius * radius}π`, `${2 * radius * height}π`],
-                    image: "cylinder.png"
+                    options: [`${2 * radius * radius + 2 * radius * height}π`, `${radius * radius + radius * height}π`, `${2 * radius * radius}π`, `${2 * radius * height}π`]
                 },
                 {
                     level: 2, timeBonus: 20,
-                    zh: `有一個柱體，底部為${base1}x${base1}的正方形，高度為${height}，它的表面積=`,
+                    zh: `有一個稜柱，底部為${base1}x${base1}的正方形，高度為${height}，它的表面積=`,
                     en: `A prism with a ${base1}x${base1} square base and height ${height}, its surface area =`,
                     answer: `${2 * base1 * base1 + 4 * base1 * height}`,
-                    options: [`${2 * base1 * base1 + 4 * base1 * height}`, `${base1 * base1 + 2 * base1 * height}`, `${4 * base1 * base1}`, `${base1 * base1 * height}`],
-                    image: "prism.png"
+                    options: [`${2 * base1 * base1 + 4 * base1 * height}`, `${base1 * base1 + 2 * base1 * height}`, `${4 * base1 * base1}`, `${base1 * base1 * height}`]
                 },
                 {
                     level: 3, timeBonus: 30,
                     zh: `有一個圓錐體，半徑為${radius}，高為${height}，它的表面積=`,
                     en: `A cone with radius ${radius} and height ${height}, its surface area =`,
                     answer: `${radius * radius + radius * Math.sqrt(radius * radius + height * height)}π`,
-                    options: [`${radius * radius + radius * Math.sqrt(radius * radius + height * height)}π`, `${radius * radius}π`, `${radius * height}π`, `${2 * radius * radius}π`],
-                    image: "cone.png"
+                    options: [`${radius * radius + radius * Math.sqrt(radius * radius + height * height)}π`, `${radius * radius}π`, `${radius * height}π`, `${2 * radius * radius}π`]
                 },
                 {
                     level: 3, timeBonus: 30,
-                    zh: `有一個錐體，底部為${base1}x${base1}的正方形，高度為${height}，它的表面積=`,
+                    zh: `有一個金字塔，底部為${base1}x${base1}的正方形，高度為${height}，它的表面積=`,
                     en: `A pyramid with a ${base1}x${base1} square base and height ${height}, its surface area =`,
                     answer: `${base1 * base1 + 2 * base1 * Math.sqrt(base1 * base1 / 4 + height * height)}`,
-                    options: [`${base1 * base1 + 2 * base1 * Math.sqrt(base1 * base1 / 4 + height * height)}`, `${base1 * base1}`, `${2 * base1 * base1}`, `${base1 * base1 + base1 * height}`],
-                    image: "pyramid.png"
+                    options: [`${base1 * base1 + 2 * base1 * Math.sqrt(base1 * base1 / 4 + height * height)}`, `${base1 * base1}`, `${2 * base1 * base1}`, `${base1 * base1 + base1 * height}`]
                 },
                 {
                     level: 1, timeBonus: 10,
                     zh: `有一組相似立體，它們邊長比例為${scale1}:${scale2}，則它們的面積比例=`,
                     en: `A group of similar solids with side length ratio ${scale1}:${scale2}, their surface area ratio =`,
                     answer: `${scale1 * scale1}:${scale2 * scale2}`,
-                    options: [`${scale1 * scale1}:${scale2 * scale2}`, `${scale1}:${scale2}`, `${scale1 * scale1 * scale1}:${scale2 * scale2 * scale2}`, `${scale1 * scale2}:${scale2 * scale1}`],
-                    image: "similar_solids.png"
+                    options: [`${scale1 * scale1}:${scale2 * scale2}`, `${scale1}:${scale2}`, `${scale1 * scale1 * scale1}:${scale2 * scale2 * scale2}`, `${scale1 * scale2}:${scale2 * scale1}`]
                 },
                 {
                     level: 1, timeBonus: 10,
                     zh: `有一組相似立體，它們邊長比例為${scale1}:${scale2}，則它們的容量比例=`,
                     en: `A group of similar solids with side length ratio ${scale1}:${scale2}, their volume ratio =`,
                     answer: `${scale1 * scale1 * scale1}:${scale2 * scale2 * scale2}`,
-                    options: [`${scale1 * scale1 * scale1}:${scale2 * scale2 * scale2}`, `${scale1 * scale1}:${scale2 * scale2}`, `${scale1}:${scale2}`, `${scale1 * scale2}:${scale2 * scale1}`],
-                    image: "similar_solids.png"
+                    options: [`${scale1 * scale1 * scale1}:${scale2 * scale2 * scale2}`, `${scale1 * scale1}:${scale2 * scale2}`, `${scale1}:${scale2}`, `${scale1 * scale2}:${scale2 * scale1}`]
                 },
                 {
                     level: 1, timeBonus: 10,
                     zh: `有一組相似立體，它們面積比例為${scale1 * scale1}:${scale2 * scale2}，則它們的邊長比例=`,
                     en: `A group of similar solids with surface area ratio ${scale1 * scale1}:${scale2 * scale2}, their side length ratio =`,
                     answer: `${scale1}:${scale2}`,
-                    options: [`${scale1}:${scale2}`, `${scale1 * scale1}:${scale2 * scale2}`, `${scale1 * scale1 * scale1}:${scale2 * scale2 * scale2}`, `${scale1 * scale2}:${scale2 * scale1}`],
-                    image: "similar_solids.png"
+                    options: [`${scale1}:${scale2}`, `${scale1 * scale1}:${scale2 * scale2}`, `${scale1 * scale1 * scale1}:${scale2 * scale2 * scale2}`, `${scale1 * scale2}:${scale2 * scale1}`]
                 },
                 {
                     level: 1, timeBonus: 10,
                     zh: `有一組相似立體，它們容量比例為${scale1 * scale1 * scale1}:${scale2 * scale2 * scale2}，則它們的邊長比例=`,
                     en: `A group of similar solids with volume ratio ${scale1 * scale1 * scale1}:${scale2 * scale2 * scale2}, their side length ratio =`,
                     answer: `${scale1}:${scale2}`,
-                    options: [`${scale1}:${scale2}`, `${scale1 * scale1}:${scale2 * scale2}`, `${scale1 * scale1 * scale1}:${scale2 * scale2 * scale2}`, `${scale1 * scale2}:${scale2 * scale1}`],
-                    image: "similar_solids.png"
+                    options: [`${scale1}:${scale2}`, `${scale1 * scale1}:${scale2 * scale2}`, `${scale1 * scale1 * scale1}:${scale2 * scale2 * scale2}`, `${scale1 * scale2}:${scale2 * scale1}`]
                 },
                 {
                     level: 2, timeBonus: 20,
                     zh: `有一組相似立體，它們容量比例為${scale1 * scale1 * scale1}:${scale2 * scale2 * scale2}，則它們的面積比例=`,
                     en: `A group of similar solids with volume ratio ${scale1 * scale1 * scale1}:${scale2 * scale2 * scale2}, their surface area ratio =`,
                     answer: `${scale1 * scale1}:${scale2 * scale2}`,
-                    options: [`${scale1 * scale1}:${scale2 * scale2}`, `${scale1}:${scale2}`, `${scale1 * scale1 * scale1}:${scale2 * scale2 * scale2}`, `${scale1 * scale2}:${scale2 * scale1}`],
-                    image: "similar_solids.png"
+                    options: [`${scale1 * scale1}:${scale2 * scale2}`, `${scale1}:${scale2}`, `${scale1 * scale1 * scale1}:${scale2 * scale2 * scale2}`, `${scale1 * scale2}:${scale2 * scale1}`]
                 }
             ];
         }
@@ -352,13 +344,16 @@
             selectedLanguage = language;
             score = 0;
             timeLeft = 20;
+            lives = 3;
+            wrongQuestions = [];
             document.getElementById('score').textContent = `Correct Answers: ${score}`;
             document.getElementById('timer').textContent = `Time: ${timeLeft}s`;
+            document.getElementById('lives').textContent = '❤'.repeat(lives);
             document.getElementById('language-selection').style.display = 'none';
             document.getElementById('game-container').style.display = 'block';
             document.getElementById('game-over').style.display = 'none';
+            document.getElementById('difficulty').textContent = '';
             questions = generateQuestions();
-            questions.forEach(q => q.image = imagePlaceholders[q.image]);
             nextQuestion();
             if (timer) clearInterval(timer);
             timer = setInterval(updateTimer, 1000);
@@ -367,8 +362,6 @@
         function nextQuestion() {
             currentQuestion = questions[Math.floor(Math.random() * questions.length)];
             document.getElementById('question').textContent = currentQuestion[selectedLanguage];
-            document.getElementById('image').src = currentQuestion.image;
-            // Update difficulty display
             const difficultyDiv = document.getElementById('difficulty');
             difficultyDiv.textContent = `Level ${currentQuestion.level}`;
             if (currentQuestion.level === 1) {
@@ -378,6 +371,8 @@
             } else {
                 difficultyDiv.style.background = '#F44336'; // Red
             }
+            timeLeft += currentQuestion.timeBonus;
+            document.getElementById('timer').textContent = `Time: ${timeLeft}s`;
             const optionsDiv = document.getElementById('options');
             optionsDiv.innerHTML = '';
             const shuffledOptions = shuffleArray([...currentQuestion.options]);
@@ -393,11 +388,20 @@
         function checkAnswer(selected) {
             if (selected === currentQuestion.answer) {
                 score++;
-                timeLeft += currentQuestion.timeBonus;
                 document.getElementById('score').textContent = `Correct Answers: ${score}`;
                 nextQuestion();
             } else {
-                endGame();
+                lives--;
+                wrongQuestions.push({
+                    question: currentQuestion[selectedLanguage],
+                    answer: currentQuestion.answer
+                });
+                document.getElementById('lives').textContent = '❤'.repeat(lives);
+                if (lives <= 0) {
+                    endGame();
+                } else {
+                    nextQuestion();
+                }
             }
         }
 
@@ -416,38 +420,43 @@
             document.getElementById('game-over').style.display = 'block';
             document.getElementById('language-selection').style.display = 'none';
             document.getElementById('final-score').textContent = score;
+            const wrongQuestionsDiv = document.getElementById('wrong-questions');
+            wrongQuestionsDiv.innerHTML = '';
+            if (wrongQuestions.length > 0) {
+                const header = document.createElement('p');
+                header.textContent = selectedLanguage === 'zh' ? '錯題回顧：' : 'Incorrect Questions:';
+                wrongQuestionsDiv.appendChild(header);
+                wrongQuestions.forEach((q, index) => {
+                    const p = document.createElement('p');
+                    p.textContent = `${index + 1}. ${q.question} ${selectedLanguage === 'zh' ? '正確答案' : 'Correct Answer'}: ${q.answer}`;
+                    wrongQuestionsDiv.appendChild(p);
+                });
+            } else {
+                const p = document.createElement('p');
+                p.textContent = selectedLanguage === 'zh' ? '無錯題' : 'No incorrect questions';
+                wrongQuestionsDiv.appendChild(p);
+            }
         }
 
         function restartGame() {
             score = 0;
             timeLeft = 20;
+            lives = 3;
+            wrongQuestions = [];
             document.getElementById('score').textContent = `Correct Answers: ${score}`;
             document.getElementById('timer').textContent = `Time: ${timeLeft}s`;
+            document.getElementById('lives').textContent = '❤'.repeat(lives);
             document.getElementById('language-selection').style.display = 'block';
             document.getElementById('game-container').style.display = 'none';
             document.getElementById('game-over').style.display = 'none';
-            document.getElementById('difficulty').textContent = ''; // Clear difficulty
+            document.getElementById('difficulty').textContent = '';
             questions = generateQuestions();
-            questions.forEach(q => q.image = imagePlaceholders[q.image]);
             if (timer) clearInterval(timer);
             timer = null;
         }
 
-        // Placeholder for image loading
-        const imagePlaceholders = {
-            'cube.png': 'https://via.placeholder.com/200?text=Cube',
-            'prism.png': 'https://via.placeholder.com/200?text=Prism',
-            'cylinder.png': 'https://via.placeholder.com/200?text=Cylinder',
-            'cone.png': 'https://via.placeholder.com/200?text=Cone',
-            'sphere.png': 'https://via.placeholder.com/200?text=Sphere',
-            'hemisphere.png': 'https://via.placeholder.com/200?text=Hemisphere',
-            'pyramid.png': 'https://via.placeholder.com/200?text=Pyramid',
-            'similar_solids.png': 'https://via.placeholder.com/200?text=Similar+Solids'
-        };
-
         // Initialize questions
         questions = generateQuestions();
-        questions.forEach(q => q.image = imagePlaceholders[q.image]);
 
         // Bind restart button
         document.getElementById('restart').addEventListener('click', restartGame);
